@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strictly no network traffic of any kind -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <!-- No trust anchors intentionally - this app never connects to any server -->
+        </trust-anchors>
+    </base-config>
+</network-security-config>

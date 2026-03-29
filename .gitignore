@@ -1,0 +1,36 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Model files (large binary files - user must add their own)
+*.bin
+*.gguf
+*.task
+*.onnx
+!app/src/main/cpp/**/*.h
+
+# Gradle wrapper jars
+gradle/wrapper/gradle-wrapper.jar
+
+# Android generated
+**/R.java
+**/R.class
+**/BuildConfig.java
+**/BuildConfig.class
+**/Manifest.java
+
+# NDK intermediates
+obj/
+.externalNativeBuild/

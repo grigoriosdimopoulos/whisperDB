@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">whisperLM</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_chat">Chat</string>
+    <string name="nav_add">Add</string>
+    <string name="nav_dialogues">Dialogues</string>
+    <string name="nav_persons">Persons</string>
+    <string name="nav_profile">Profile</string>
+
+    <!-- Setup Wizard -->
+    <string name="setup_title">Welcome to whisperLM</string>
+    <string name="setup_step_whisper">Step 1: Add Whisper Model</string>
+    <string name="setup_step_llm">Step 2: Add LLM Model (Optional)</string>
+    <string name="setup_step_profile">Step 3: Your Profile</string>
+    <string name="setup_pick_model">Pick Model File</string>
+    <string name="setup_skip">Skip</string>
+    <string name="setup_next">Next</string>
+    <string name="setup_finish">Get Started</string>
+    <string name="setup_whisper_hint">Copy a whisper-*.bin file (tiny/base/small/medium) to use for speech recognition</string>
+    <string name="setup_llm_hint">Copy a .task (Gemma/MediaPipe) or .gguf (llama.cpp) file for AI chat. You can add this later.</string>
+    <string name="setup_model_copied">Model copied successfully</string>
+    <string name="setup_model_copying">Copying model…</string>
+
+    <!-- Chat screen -->
+    <string name="chat_hint">Ask anything about your conversations…</string>
+    <string name="chat_no_model">No LLM model found. Add a .task or .gguf file in Settings.</string>
+    <string name="chat_thinking">Thinking…</string>
+    <string name="chat_empty">No conversations yet. Add your first recording to get started.</string>
+
+    <!-- Add Recording -->
+    <string name="add_record_new">Record New</string>
+    <string name="add_import_file">Import File</string>
+    <string name="add_recording_hint">Subject / Title</string>
+    <string name="add_recording">Recording…</string>
+    <string name="add_stop">Stop Recording</string>
+    <string name="add_transcribing">Transcribing…</string>
+    <string name="add_diarizing">Identifying speakers…</string>
+    <string name="add_assign_speakers">Assign Speaker Names</string>
+    <string name="add_save">Save Dialogue</string>
+    <string name="add_cancel">Cancel</string>
+    <string name="add_speaker_label">Speaker %1$s</string>
+    <string name="add_suggested">Suggested: %1$s</string>
+    <string name="add_confirm_suggestion">Confirm</string>
+    <string name="add_enter_name">Enter name…</string>
+
+    <!-- Dialogues -->
+    <string name="dialogues_title">Dialogues</string>
+    <string name="dialogues_empty">No dialogues yet</string>
+    <string name="dialogues_sort_newest">Newest first</string>
+    <string name="dialogues_sort_oldest">Oldest first</string>
+    <string name="dialogue_delete_confirm">Delete this dialogue?</string>
+    <string name="dialogue_delete_confirm_msg">This will permanently delete the dialogue and its transcript.</string>
+
+    <!-- Dialogue Detail -->
+    <string name="dialogue_detail_subject">Subject</string>
+    <string name="dialogue_detail_participants">Participants</string>
+    <string name="dialogue_detail_play">Play Recording</string>
+    <string name="dialogue_detail_save">Save Changes</string>
+    <string name="dialogue_detail_delete">Delete</string>
+    <string name="dialogue_detail_edit_segment">Edit</string>
+
+    <!-- Persons -->
+    <string name="persons_title">Persons</string>
+    <string name="persons_empty">No persons added yet</string>
+    <string name="persons_add">Add Person</string>
+
+    <!-- Person Profile -->
+    <string name="person_name">Name</string>
+    <string name="person_age">Age</string>
+    <string name="person_relation">Relation</string>
+    <string name="person_notes">Notes</string>
+    <string name="person_save">Save</string>
+    <string name="person_delete">Delete Person</string>
+    <string name="person_delete_confirm">Delete this person?</string>
+    <string name="person_delete_confirm_msg">This will remove the person but keep their dialogues.</string>
+    <string name="person_dialogues">Dialogues</string>
+    <string name="person_voice_samples">Voice samples: %1$d</string>
+    <string name="person_photo">Profile Photo</string>
+
+    <!-- Relations -->
+    <string name="relation_self">Self</string>
+    <string name="relation_family">Family</string>
+    <string name="relation_friend">Friend</string>
+    <string name="relation_colleague">Colleague</string>
+    <string name="relation_other">Other</string>
+
+    <!-- Common -->
+    <string name="cancel">Cancel</string>
+    <string name="delete">Delete</string>
+    <string name="save">Save</string>
+    <string name="ok">OK</string>
+    <string name="error_generic">Something went wrong. Please try again.</string>
+    <string name="loading">Loading…</string>
+    <string name="unknown_speaker">Unknown</string>
+    <string name="you">You</string>
+</resources>

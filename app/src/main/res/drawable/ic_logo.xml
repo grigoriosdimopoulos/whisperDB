@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- whisperLM logo: stylized machine/robot whispering a secret into a human ear -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Background circle -->
+    <path
+        android:fillColor="#1E1E2E"
+        android:pathData="M54,54 m-54,0 a54,54 0 1,0 108,0 a54,54 0 1,0 -108,0" />
+
+    <!-- Human ear (right side) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#B46FE8"
+        android:strokeWidth="2.5"
+        android:pathData="M68,32 C78,32 84,40 84,50 C84,60 78,68 68,70 L68,62 C74,60 78,56 78,50 C78,44 74,40 68,38 Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#B46FE8"
+        android:strokeWidth="2.5"
+        android:pathData="M68,38 C72,40 74,44 74,50 C74,56 72,60 68,62 L68,70 C64,70 62,66 62,62 L62,56 C64,56 66,54 66,50 C66,46 64,44 62,44 L62,38 C64,36 66,34 68,34" />
+
+    <!-- Machine/robot head (left side) -->
+    <!-- Robot body rectangle -->
+    <path
+        android:fillColor="#4A0E8F"
+        android:strokeColor="#7B2FBE"
+        android:strokeWidth="1.5"
+        android:pathData="M20,36 L50,36 L50,66 L20,66 Z"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+
+    <!-- Robot eyes -->
+    <path
+        android:fillColor="#B46FE8"
+        android:pathData="M28,46 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+    <path
+        android:fillColor="#B46FE8"
+        android:pathData="M42,46 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+
+    <!-- Robot antenna -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#7B2FBE"
+        android:strokeWidth="2"
+        android:pathData="M35,36 L35,28" />
+    <path
+        android:fillColor="#B46FE8"
+        android:pathData="M35,28 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+
+    <!-- Robot mouth (small arc suggesting whispering) -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#E0E0E0"
+        android:strokeWidth="1.8"
+        android:pathData="M27,58 Q35,62 43,58" />
+
+    <!-- Sound wave lines coming from robot mouth toward ear -->
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#7B2FBE"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:pathData="M52,46 Q56,44 58,46 Q60,48 62,46" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#7B2FBE"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M52,50 Q56,48 60,50 Q62,52 64,50" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#7B2FBE"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M52,54 Q57,52 60,54" />
+
+</vector>

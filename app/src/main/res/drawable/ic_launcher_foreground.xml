@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Robot head -->
+    <path
+        android:fillColor="#7B2FBE"
+        android:pathData="M24,38 L54,38 L54,68 L24,68 Z" />
+
+    <!-- Robot eyes -->
+    <path android:fillColor="#FFFFFF" android:pathData="M31,50 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M47,50 m-5,0 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0" />
+    <path android:fillColor="#1E1E2E" android:pathData="M31,50 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+    <path android:fillColor="#1E1E2E" android:pathData="M47,50 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0" />
+
+    <!-- Antenna -->
+    <path android:fillColor="#00000000" android:strokeColor="#B46FE8" android:strokeWidth="2.5" android:pathData="M39,38 L39,28" />
+    <path android:fillColor="#B46FE8" android:pathData="M39,28 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0" />
+
+    <!-- Mouth suggesting whisper -->
+    <path android:fillColor="#00000000" android:strokeColor="#E0E0E0" android:strokeWidth="2" android:pathData="M30,60 Q39,64 48,60" />
+
+    <!-- Sound waves -->
+    <path android:fillColor="#00000000" android:strokeColor="#B46FE8" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M56,46 Q60,43 63,46" />
+    <path android:fillColor="#00000000" android:strokeColor="#B46FE8" android:strokeWidth="2" android:strokeLineCap="round" android:pathData="M56,50 Q61,47 65,50" />
+    <path android:fillColor="#00000000" android:strokeColor="#B46FE8" android:strokeWidth="1.5" android:strokeLineCap="round" android:pathData="M56,54 Q62,51 66,54" />
+
+    <!-- Human ear -->
+    <path android:fillColor="#00000000" android:strokeColor="#E0E0E0" android:strokeWidth="2.5" android:pathData="M72,34 C82,34 88,42 88,52 C88,62 82,70 72,72 L72,64 C78,62 82,58 82,52 C82,46 78,42 72,40 Z" />
+    <path android:fillColor="#00000000" android:strokeColor="#E0E0E0" android:strokeWidth="2" android:pathData="M72,40 C76,42 78,46 78,52 C78,58 76,62 72,64 L72,72 C68,72 66,68 66,64 L66,58 C68,58 70,56 70,52 C70,48 68,46 66,46 L66,40 C68,38 70,36 72,36" />
+
+</vector>
