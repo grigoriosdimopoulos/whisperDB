@@ -119,7 +119,7 @@ class LlmEngine @Inject constructor(
         }
 
         var result = ""
-        inference.generateAsync(prompt) { partial, done ->
+        inference.generateResponseAsync(prompt) { partial, done ->
             result += partial
             trySend(partial)
             if (done) close()
