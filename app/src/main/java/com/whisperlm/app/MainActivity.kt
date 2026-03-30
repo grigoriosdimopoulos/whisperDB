@@ -92,13 +92,14 @@ fun AppContent() {
                 }
             }
         }
-    ) { innerPadding ->
+    ) { _ ->
         AppNavGraph(
             navController = navController,
             startDestination = startDestination
         )
     }
-}
+    }  // end Surface
+}  // end AppContent
 
 @Composable
 fun WhisperBottomNav(
