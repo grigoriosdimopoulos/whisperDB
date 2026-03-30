@@ -23,8 +23,7 @@ android {
             cmake {
                 cppFlags += "-std=c++17 -O3 -DNDEBUG"
                 arguments += listOf(
-                    "-DANDROID_STL=c++_shared",
-                    "-DGGML_USE_CPU_SIMD=ON"
+                    "-DANDROID_STL=c++_shared"
                 )
             }
         }

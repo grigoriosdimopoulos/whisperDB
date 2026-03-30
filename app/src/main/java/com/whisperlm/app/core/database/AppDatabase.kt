@@ -24,7 +24,7 @@ import com.whisperlm.app.core.database.entity.VoiceEmbeddingEntity
         TranscriptionSegmentEntity::class
     ],
     version = 1,
-    exportSchema = true
+    exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
