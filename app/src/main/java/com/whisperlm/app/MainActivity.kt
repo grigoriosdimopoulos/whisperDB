@@ -7,10 +7,11 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -54,15 +55,20 @@ fun AppContent() {
     val mainViewModel: MainViewModel = hiltViewModel()
     val isSetupComplete by mainViewModel.isSetupComplete.collectAsState()
 
-    if (isSetupComplete == null) return  // wait for DataStore to load
+    // Paint the theme background immediately; show nothing until DataStore is ready
+    Surface(
+        modifier = Modifier.fillMaxSize(),
+        color = MaterialTheme.colorScheme.background
+    ) {
+        if (isSetupComplete == null) return@Surface  // waiting for DataStore
 
-    val startDestination = if (isSetupComplete == true) AppRoutes.CHAT else AppRoutes.SETUP
-    val navController = rememberNavController()
+        val startDestination = if (isSetupComplete == true) AppRoutes.CHAT else AppRoutes.SETUP
+        val navController = rememberNavController()
 
-    val showBottomNav = isSetupComplete == true
-    val bottomNavRoutes = BottomNavItem.items.map { it.route }
+        val showBottomNav = isSetupComplete == true
+        val bottomNavRoutes = BottomNavItem.items.map { it.route }
 
-    Scaffold(
+        Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showBottomNav) {
