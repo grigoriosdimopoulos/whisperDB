@@ -5,10 +5,11 @@ import android.util.Log
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import com.whisperlm.app.core.util.FileUtils
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
@@ -111,29 +112,26 @@ class LlmEngine @Inject constructor(
         return "<start_of_turn>user\n$systemContext\n\nQuestion: $userQuery<end_of_turn>\n<start_of_turn>model\n"
     }
 
-    private fun generateMediaPipe(prompt: String): Flow<String> = callbackFlow {
+    private fun generateMediaPipe(prompt: String): Flow<String> = flow {
         val inference = mediaPipeInference ?: run {
-            trySend("[Model not available]")
-            close()
-            return@callbackFlow
+            emit("[Model not available]")
+            return@flow
         }
-
-        var result = ""
-        inference.generateResponseAsync(prompt) { partial, done ->
-            result += partial
-            trySend(partial)
-            if (done) close()
+        try {
+            // generateResponse is synchronous; wrap in IO dispatcher
+            val response = withContext(Dispatchers.Default) {
+                inference.generateResponse(prompt)
+            }
+            emit(response)
+        } catch (e: Exception) {
+            Log.e(TAG, "MediaPipe generation error: ${e.message}")
+            emit("[Generation failed: ${e.message}]")
         }
-
-        awaitClose()
     }
 
-    private fun generateLlama(prompt: String): Flow<String> = callbackFlow {
-        val response = nativeGenerate(prompt, 512)
-        trySend(response)
-        close()
-        awaitClose()
-    }
+    private fun generateLlama(prompt: String): Flow<String> = flow {
+        emit(nativeGenerate(prompt, 512))
+    }.flowOn(Dispatchers.Default)
 
     fun release() {
         mediaPipeInference?.close()

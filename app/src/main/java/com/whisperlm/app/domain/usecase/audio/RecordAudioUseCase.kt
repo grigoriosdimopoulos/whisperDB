@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import java.io.File
 import javax.inject.Inject
@@ -53,7 +54,7 @@ class RecordAudioUseCase @Inject constructor(
         recorder.startRecording()
 
         val buffer = ByteArray(BUFFER_SIZE)
-        while (isActive) {
+        while (currentCoroutineContext().isActive) {
             val read = recorder.read(buffer, 0, buffer.size)
             if (read > 0) {
                 val chunk = buffer.copyOf(read)

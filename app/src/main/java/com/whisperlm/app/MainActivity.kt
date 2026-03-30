@@ -43,14 +43,14 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             WhisperLMTheme {
-                WhisperLMApp()
+                AppContent()
             }
         }
     }
 }
 
 @Composable
-fun WhisperLMApp() {
+fun AppContent() {
     val mainViewModel: MainViewModel = hiltViewModel()
     val isSetupComplete by mainViewModel.isSetupComplete.collectAsState()
 
