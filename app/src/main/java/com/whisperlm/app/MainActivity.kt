@@ -60,44 +60,44 @@ fun AppContent() {
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
     ) {
-        if (isSetupComplete == null) return@Surface  // waiting for DataStore
+        // isSetupComplete is null only while DataStore hasn't emitted yet;
+        // once it emits, ?: false means null key → false (first run) or true (done)
+        if (isSetupComplete != null) {
+            val startDestination = if (isSetupComplete == true) AppRoutes.CHAT else AppRoutes.SETUP
+            val navController = rememberNavController()
 
-        val startDestination = if (isSetupComplete == true) AppRoutes.CHAT else AppRoutes.SETUP
-        val navController = rememberNavController()
+            val bottomNavRoutes = BottomNavItem.items.map { it.route }
 
-        val showBottomNav = isSetupComplete == true
-        val bottomNavRoutes = BottomNavItem.items.map { it.route }
-
-        Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            if (showBottomNav) {
-                val navBackStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = navBackStackEntry?.destination?.route
-                // Only show bottom nav on top-level routes
-                val isTopLevel = bottomNavRoutes.any { currentRoute?.startsWith(it) == true }
-                if (isTopLevel) {
-                    WhisperBottomNav(
-                        currentRoute = currentRoute,
-                        onItemSelected = { item ->
-                            navController.navigate(item.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
+            Scaffold(
+                modifier = Modifier.fillMaxSize(),
+                bottomBar = {
+                    if (isSetupComplete == true) {
+                        val navBackStackEntry by navController.currentBackStackEntryAsState()
+                        val currentRoute = navBackStackEntry?.destination?.route
+                        val isTopLevel = bottomNavRoutes.any { currentRoute?.startsWith(it) == true }
+                        if (isTopLevel) {
+                            WhisperBottomNav(
+                                currentRoute = currentRoute,
+                                onItemSelected = { item ->
+                                    navController.navigate(item.route) {
+                                        popUpTo(navController.graph.findStartDestination().id) {
+                                            saveState = true
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = true
+                                    }
                                 }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            )
                         }
-                    )
+                    }
                 }
+            ) { _ ->
+                AppNavGraph(
+                    navController = navController,
+                    startDestination = startDestination
+                )
             }
         }
-    ) { _ ->
-        AppNavGraph(
-            navController = navController,
-            startDestination = startDestination
-        )
-    }
     }  // end Surface
 }  // end AppContent
 
@@ -129,6 +129,6 @@ class MainViewModel @Inject constructor(
     }
 
     val isSetupComplete = dataStore.data
-        .map { prefs -> prefs[KEY_SETUP_COMPLETE] }
+        .map { prefs -> prefs[KEY_SETUP_COMPLETE] ?: false }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 }
