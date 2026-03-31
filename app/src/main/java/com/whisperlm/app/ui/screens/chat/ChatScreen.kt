@@ -105,10 +105,15 @@ class ChatViewModel @Inject constructor(
         viewModelScope.launch {
             // Load the LLM model and build the conversation context in parallel
             val backendDeferred = launch {
-                val backend = llmEngine.loadModel()
-                _llmStatus.value = when (backend) {
-                    LlmBackend.NONE -> STATUS_NO_MODEL
-                    else -> STATUS_READY
+                try {
+                    val backend = llmEngine.loadModel()
+                    _llmStatus.value = when (backend) {
+                        LlmBackend.NONE -> STATUS_NO_MODEL
+                        else -> STATUS_READY
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Model load error: ${e.message}")
+                    _llmStatus.value = STATUS_NO_MODEL
                 }
             }
 
