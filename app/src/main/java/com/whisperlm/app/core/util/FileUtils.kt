@@ -34,22 +34,24 @@ object FileUtils {
 
     /**
      * Find the first Whisper model file (.bin) in the models directory.
+     * Matches any .bin file — covers ggml-base.bin, ggml-small.bin, etc.
      */
     fun findWhisperModel(context: Context): File? =
         getModelsDir(context).listFiles()
-            ?.firstOrNull { it.extension == "bin" && it.name.startsWith("whisper") }
+            ?.firstOrNull { it.extension.lowercase() == "bin" }
 
     /**
-     * Find LLM model: .task (MediaPipe) first, then .gguf (llama.cpp)
+     * Find LLM model: .task (MediaPipe) first, then .gguf (llama.cpp).
+     * Case-insensitive extension check.
      */
     fun findLlmModel(context: Context): File? {
         val modelsDir = getModelsDir(context)
-        return modelsDir.listFiles()?.firstOrNull { it.extension == "task" }
-            ?: modelsDir.listFiles()?.firstOrNull { it.extension == "gguf" }
+        return modelsDir.listFiles()?.firstOrNull { it.extension.lowercase() == "task" }
+            ?: modelsDir.listFiles()?.firstOrNull { it.extension.lowercase() == "gguf" }
     }
 
-    fun isMediaPipeModel(file: File): Boolean = file.extension == "task"
-    fun isLlamaModel(file: File): Boolean = file.extension == "gguf"
+    fun isMediaPipeModel(file: File): Boolean = file.extension.lowercase() == "task"
+    fun isLlamaModel(file: File): Boolean = file.extension.lowercase() == "gguf"
 
     /**
      * Copy a URI (e.g. from file picker) into the app's models directory.
