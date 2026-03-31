@@ -40,6 +40,9 @@ jobs:
           echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
           echo "NDK_HOME=$ANDROID_SDK_ROOT/ndk/25.2.9519653" >> $GITHUB_ENV
 
+      - name: Install CMake 3.22.1
+        run: echo "y" | sdkmanager "cmake;3.22.1" --sdk_root=$ANDROID_SDK_ROOT
+
       # ── 4. Gradle wrapper jar (bootstrap if missing) ───────────────────────
       - name: Bootstrap Gradle wrapper jar
         run: |
