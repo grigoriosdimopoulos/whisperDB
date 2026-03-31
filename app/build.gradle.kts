@@ -8,6 +8,7 @@ plugins {
 android {
     namespace = "com.whisperlm.app"
     compileSdk = 34
+    ndkVersion = "25.2.9519653"
 
     defaultConfig {
         applicationId = "com.whisperlm.app"
@@ -65,7 +66,7 @@ android {
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
+            version = "3.28.3"
         }
     }
 

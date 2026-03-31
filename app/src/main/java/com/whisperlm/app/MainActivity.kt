@@ -5,7 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
@@ -16,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -63,7 +63,8 @@ fun AppContent() {
         // isSetupComplete is null only while DataStore hasn't emitted yet;
         // once it emits, ?: false means null key → false (first run) or true (done)
         if (isSetupComplete != null) {
-            val startDestination = if (isSetupComplete == true) AppRoutes.CHAT else AppRoutes.SETUP
+            // Capture startDestination once — changing it later would rebuild the nav graph and crash
+            val startDestination = remember { if (isSetupComplete == true) AppRoutes.CHAT else AppRoutes.SETUP }
             val navController = rememberNavController()
 
             val bottomNavRoutes = BottomNavItem.items.map { it.route }
