@@ -11,19 +11,27 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # ─────────────────────────────────────────────────────────────────────────────
 set(WHISPER_CPP_DIR ${CMAKE_SOURCE_DIR}/whisper.cpp)
 
-if(EXISTS ${WHISPER_CPP_DIR}/whisper.cpp)
-    set(WHISPER_SOURCES
-        ${WHISPER_CPP_DIR}/whisper.cpp
-        ${WHISPER_CPP_DIR}/ggml.c
-        ${WHISPER_CPP_DIR}/ggml-alloc.c
-        ${WHISPER_CPP_DIR}/ggml-backend.c
-        ${WHISPER_CPP_DIR}/ggml-quants.c
-    )
+if(EXISTS ${WHISPER_CPP_DIR}/CMakeLists.txt)
+    # Disable unused components for Android build
+    set(WHISPER_BUILD_TESTS     OFF CACHE BOOL "" FORCE)
+    set(WHISPER_BUILD_EXAMPLES  OFF CACHE BOOL "" FORCE)
+    set(WHISPER_BUILD_SERVER    OFF CACHE BOOL "" FORCE)
+    set(GGML_OPENMP             OFF CACHE BOOL "" FORCE)
+    set(GGML_METAL              OFF CACHE BOOL "" FORCE)
+    set(GGML_CUDA               OFF CACHE BOOL "" FORCE)
+    set(GGML_VULKAN             OFF CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS       OFF CACHE BOOL "" FORCE)
 
-    add_library(whisper STATIC ${WHISPER_SOURCES})
-    target_include_directories(whisper PUBLIC ${WHISPER_CPP_DIR})
-    target_compile_options(whisper PRIVATE -O3 -DNDEBUG)
+    add_subdirectory(${WHISPER_CPP_DIR} whisper_build)
     set(WHISPER_AVAILABLE TRUE)
+
+    # whisper.h lives in include/ on newer versions, root on older ones
+    if(EXISTS ${WHISPER_CPP_DIR}/include/whisper.h)
+        set(WHISPER_INCLUDE_DIR ${WHISPER_CPP_DIR}/include)
+    else()
+        set(WHISPER_INCLUDE_DIR ${WHISPER_CPP_DIR})
+    endif()
+    message(STATUS "whisper.cpp found — building with STT support")
 else()
     message(STATUS "whisper.cpp not found at ${WHISPER_CPP_DIR} - using stub")
     set(WHISPER_AVAILABLE FALSE)
@@ -57,7 +65,7 @@ target_include_directories(whisperlm_jni PRIVATE
 )
 
 if(WHISPER_AVAILABLE)
-    target_include_directories(whisperlm_jni PRIVATE ${WHISPER_CPP_DIR})
+    target_include_directories(whisperlm_jni PRIVATE ${WHISPER_INCLUDE_DIR})
     target_link_libraries(whisperlm_jni whisper)
     target_compile_definitions(whisperlm_jni PRIVATE WHISPER_AVAILABLE=1)
 endif()

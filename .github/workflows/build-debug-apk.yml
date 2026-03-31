@@ -43,7 +43,15 @@ jobs:
       - name: Install CMake 3.22.1
         run: echo "y" | sdkmanager "cmake;3.22.1" --sdk_root=$ANDROID_SDK_ROOT
 
-      # ── 4. Gradle wrapper jar (bootstrap if missing) ───────────────────────
+      # ── 4. Download whisper.cpp for native STT ─────────────────────────────
+      - name: Download whisper.cpp
+        run: |
+          git clone --depth=1 \
+            https://github.com/ggerganov/whisper.cpp \
+            app/src/main/cpp/whisper.cpp
+          echo "whisper.cpp cloned: $(ls app/src/main/cpp/whisper.cpp | head -5)"
+
+      # ── 6. Gradle wrapper jar (bootstrap if missing) ───────────────────────
       - name: Bootstrap Gradle wrapper jar
         run: |
           if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then

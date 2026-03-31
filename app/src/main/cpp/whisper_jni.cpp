@@ -8,7 +8,7 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 #ifdef WHISPER_AVAILABLE
-#include "whisper.cpp/whisper.h"
+#include "whisper.h"
 
 static struct whisper_context* g_ctx = nullptr;
 

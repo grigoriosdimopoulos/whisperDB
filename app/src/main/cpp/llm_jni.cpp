@@ -95,7 +95,7 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeIsLoaded(JNIEnv*, jobject) {
 extern "C" {
 
 JNIEXPORT jboolean JNICALL
-Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeLoadModel(
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeLoadModel(
         JNIEnv*, jobject, jstring, jint) {
     LOGE("llama.cpp not compiled in");
     return JNI_FALSE;
