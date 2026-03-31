@@ -111,7 +111,7 @@ class ChatViewModel @Inject constructor(
                         LlmBackend.NONE -> STATUS_NO_MODEL
                         else -> STATUS_READY
                     }
-                } catch (e: Exception) {
+                } catch (e: Throwable) {
                     Log.e(TAG, "Model load error: ${e.message}")
                     _llmStatus.value = STATUS_NO_MODEL
                 }

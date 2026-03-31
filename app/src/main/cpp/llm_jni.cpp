@@ -16,7 +16,7 @@ static llama_sampler* g_sampler = nullptr;
 extern "C" {
 
 JNIEXPORT jboolean JNICALL
-Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeLoadModel(
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeLoadModel(
         JNIEnv* env, jobject, jstring modelPath, jint nCtx) {
     const char* path = env->GetStringUTFChars(modelPath, nullptr);
     LOGI("Loading llama model: %s", path);
@@ -43,7 +43,7 @@ Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeLoadModel(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeGenerate(
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
         JNIEnv* env, jobject, jstring prompt, jint maxTokens) {
     if (!g_llama || !g_model) return env->NewStringUTF("[Model not loaded]");
 
@@ -77,14 +77,14 @@ Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeGenerate(
 }
 
 JNIEXPORT void JNICALL
-Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeFreeModel(JNIEnv*, jobject) {
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFreeModel(JNIEnv*, jobject) {
     if (g_sampler) { llama_sampler_free(g_sampler); g_sampler = nullptr; }
     if (g_llama)   { llama_free(g_llama);   g_llama  = nullptr; }
     if (g_model)   { llama_model_free(g_model); g_model = nullptr; }
 }
 
 JNIEXPORT jboolean JNICALL
-Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeIsLoaded(JNIEnv*, jobject) {
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeIsLoaded(JNIEnv*, jobject) {
     return (g_llama != nullptr) ? JNI_TRUE : JNI_FALSE;
 }
 
@@ -102,16 +102,16 @@ Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeLoadModel(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeGenerate(
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
         JNIEnv* env, jobject, jstring, jint) {
     return env->NewStringUTF("[llama.cpp not compiled in]");
 }
 
 JNIEXPORT void JNICALL
-Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeFreeModel(JNIEnv*, jobject) {}
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFreeModel(JNIEnv*, jobject) {}
 
 JNIEXPORT jboolean JNICALL
-Java_com_whisperlm_app_ml_llm_LlamaEngine_nativeIsLoaded(JNIEnv*, jobject) {
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeIsLoaded(JNIEnv*, jobject) {
     return JNI_FALSE;
 }
 

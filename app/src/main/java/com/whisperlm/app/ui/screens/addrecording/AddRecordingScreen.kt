@@ -1,9 +1,12 @@
 package com.whisperlm.app.ui.screens.addrecording
 
+import android.Manifest
 import android.content.Context
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import android.content.pm.PackageManager
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
@@ -89,10 +92,15 @@ class AddRecordingViewModel @Inject constructor(
         recordedAt.value = System.currentTimeMillis()
 
         recordingJob = viewModelScope.launch {
-            recordAudioUseCase.startRecording().collect { chunk ->
-                elapsedRecordingMs.value = chunk.elapsedMs
-                val amplitude = chunk.pcmFloats.maxOrNull()?.let { Math.abs(it) } ?: 0f
-                waveformAmplitudes.value = (waveformAmplitudes.value + amplitude).takeLast(80)
+            try {
+                recordAudioUseCase.startRecording().collect { chunk ->
+                    elapsedRecordingMs.value = chunk.elapsedMs
+                    val amplitude = chunk.pcmFloats.maxOrNull()?.let { Math.abs(it) } ?: 0f
+                    waveformAmplitudes.value = (waveformAmplitudes.value + amplitude).takeLast(80)
+                }
+            } catch (e: Throwable) {
+                error.value = "Recording failed: ${e.message}"
+                screenState.value = AddRecordingState.IDLE
             }
         }
     }
@@ -302,6 +310,13 @@ fun AddRecordingScreen(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? -> uri?.let { viewModel.importFile(it) } }
 
+    val audioPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) viewModel.startRecording()
+        else viewModel.error.value = "Microphone permission is required to record audio."
+    }
+
     // Navigate when saved
     LaunchedEffect(savedId) {
         savedId?.let { onDialogueSaved(it) }
@@ -315,7 +330,13 @@ fun AddRecordingScreen(
         when (screenState) {
             AddRecordingState.IDLE -> IdleContent(
                 modifier = Modifier.padding(padding),
-                onRecord = { viewModel.startRecording() },
+                onRecord = {
+                    val hasPermission = ContextCompat.checkSelfPermission(
+                        context, Manifest.permission.RECORD_AUDIO
+                    ) == PackageManager.PERMISSION_GRANTED
+                    if (hasPermission) viewModel.startRecording()
+                    else audioPermissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                },
                 onImport = { importLauncher.launch("audio/*") }
             )
 
