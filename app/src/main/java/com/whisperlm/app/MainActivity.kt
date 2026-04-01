@@ -4,6 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -92,11 +94,22 @@ fun AppContent() {
                         }
                     }
                 }
-            ) { _ ->
-                AppNavGraph(
-                    navController = navController,
-                    startDestination = startDestination
-                )
+            ) { innerPadding ->
+                // Apply outer Scaffold padding (bottom nav bar + system nav bar) so
+                // content in every screen never draws behind WhisperBottomNav.
+                // consumeWindowInsets tells child Scaffolds those insets are already
+                // handled, preventing double-padding of the navigation bar.
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .consumeWindowInsets(innerPadding)
+                ) {
+                    AppNavGraph(
+                        navController = navController,
+                        startDestination = startDestination
+                    )
+                }
             }
         }
     }  // end Surface
