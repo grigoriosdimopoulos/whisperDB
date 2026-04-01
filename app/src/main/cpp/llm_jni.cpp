@@ -1,5 +1,6 @@
 #include <jni.h>
 #include <string>
+#include <vector>
 #include <android/log.h>
 
 #define LOG_TAG "LlamaJNI"
@@ -22,17 +23,16 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeLoadModel(
     LOGI("Loading llama model: %s", path);
 
     llama_model_params mparams = llama_model_default_params();
-    g_model = llama_load_model_from_file(path, mparams);
+    g_model = llama_model_load_from_file(path, mparams);
     env->ReleaseStringUTFChars(modelPath, path);
 
     if (!g_model) { LOGE("Failed to load llama model"); return JNI_FALSE; }
 
     llama_context_params cparams = llama_context_default_params();
-    cparams.n_ctx    = (uint32_t) nCtx;
-    cparams.n_threads = 4;
-    g_llama = llama_new_context_with_model(g_model, cparams);
+    cparams.n_ctx = (uint32_t) nCtx;
+    g_llama = llama_init_from_model(g_model, cparams);
     if (!g_llama) { LOGE("Failed to create llama context"); return JNI_FALSE; }
-
+    llama_set_n_threads(g_llama, 4, 4);
     g_sampler = llama_sampler_chain_init(llama_sampler_chain_default_params());
     llama_sampler_chain_add(g_sampler, llama_sampler_init_temp(0.7f));
     llama_sampler_chain_add(g_sampler, llama_sampler_init_top_p(0.9f, 1));
@@ -56,14 +56,14 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
     llama_tokenize(vocab, promptStr, (int32_t)strlen(promptStr), tokens.data(), tokens.size(), true, true);
     env->ReleaseStringUTFChars(prompt, promptStr);
 
-    llama_kv_cache_clear(g_llama);
+    llama_kv_self_clear(g_llama);
 
     llama_batch batch = llama_batch_get_one(tokens.data(), (int32_t) tokens.size());
     llama_decode(g_llama, batch);
 
     for (int i = 0; i < maxTokens; i++) {
         llama_token token = llama_sampler_sample(g_sampler, g_llama, -1);
-        if (llama_token_is_eog(vocab, token)) break;
+        if (llama_vocab_is_eog(vocab, token)) break;
 
         char buf[256] = {};
         int n = llama_token_to_piece(vocab, token, buf, sizeof(buf), 0, true);
