@@ -56,8 +56,6 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
     llama_tokenize(vocab, promptStr, (int32_t)strlen(promptStr), tokens.data(), tokens.size(), true, true);
     env->ReleaseStringUTFChars(prompt, promptStr);
 
-    llama_kv_self_clear(g_llama);
-
     llama_batch batch = llama_batch_get_one(tokens.data(), (int32_t) tokens.size());
     llama_decode(g_llama, batch);
 
