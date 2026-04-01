@@ -43,9 +43,28 @@ endif()
 # ─────────────────────────────────────────────────────────────────────────────
 set(LLAMA_CPP_DIR ${CMAKE_SOURCE_DIR}/llama.cpp)
 
-if(EXISTS ${LLAMA_CPP_DIR}/llama.cpp)
+if(EXISTS ${LLAMA_CPP_DIR}/CMakeLists.txt)
+    # Disable everything we don't need for an Android JNI library
+    set(LLAMA_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+    set(LLAMA_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+    set(LLAMA_BUILD_SERVER   OFF CACHE BOOL "" FORCE)
+    set(LLAMA_BUILD_TOOLS    OFF CACHE BOOL "" FORCE)
+    set(GGML_OPENMP          OFF CACHE BOOL "" FORCE)
+    set(GGML_METAL           OFF CACHE BOOL "" FORCE)
+    set(GGML_CUDA            OFF CACHE BOOL "" FORCE)
+    set(GGML_VULKAN          OFF CACHE BOOL "" FORCE)
+    set(BUILD_SHARED_LIBS    OFF CACHE BOOL "" FORCE)
+
     add_subdirectory(${LLAMA_CPP_DIR} llama_build)
     set(LLAMA_AVAILABLE TRUE)
+
+    # llama.h lives in include/ on some versions, root on others
+    if(EXISTS ${LLAMA_CPP_DIR}/include/llama.h)
+        set(LLAMA_INCLUDE_DIR ${LLAMA_CPP_DIR}/include)
+    else()
+        set(LLAMA_INCLUDE_DIR ${LLAMA_CPP_DIR})
+    endif()
+    message(STATUS "llama.cpp found — building with GGUF LLM support")
 else()
     message(STATUS "llama.cpp not found at ${LLAMA_CPP_DIR} - using stub")
     set(LLAMA_AVAILABLE FALSE)
@@ -71,6 +90,7 @@ if(WHISPER_AVAILABLE)
 endif()
 
 if(LLAMA_AVAILABLE)
+    target_include_directories(whisperlm_jni PRIVATE ${LLAMA_INCLUDE_DIR})
     target_link_libraries(whisperlm_jni llama)
     target_compile_definitions(whisperlm_jni PRIVATE LLAMA_AVAILABLE=1)
 endif()

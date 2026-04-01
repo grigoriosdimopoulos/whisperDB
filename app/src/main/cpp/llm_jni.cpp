@@ -7,7 +7,7 @@
 #define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 #ifdef LLAMA_AVAILABLE
-#include "llama.cpp/llama.h"
+#include "llama.h"
 
 static llama_model*   g_model   = nullptr;
 static llama_context* g_llama   = nullptr;
