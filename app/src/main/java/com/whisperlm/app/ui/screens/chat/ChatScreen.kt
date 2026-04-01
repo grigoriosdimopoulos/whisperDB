@@ -330,15 +330,14 @@ fun ChatScreen(
                 }
             }
 
-            // No-model banner replaces input
+            // Status banner shown above input when model is not ready
             if (llmStatus.startsWith("No model")) {
                 NoModelBanner()
-            } else {
-                ChatInput(
-                    isLoading = isLoading,
-                    onSend = { viewModel.sendMessage(it) }
-                )
             }
+            ChatInput(
+                isLoading = isLoading,
+                onSend = { viewModel.sendMessage(it) }
+            )
         }
     }
 }
