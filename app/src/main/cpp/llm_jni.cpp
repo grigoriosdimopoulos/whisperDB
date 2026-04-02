@@ -45,7 +45,22 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeLoadModel(
 JNIEXPORT jstring JNICALL
 Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
         JNIEnv* env, jobject, jstring prompt, jint maxTokens) {
-    if (!g_llama || !g_model) return env->NewStringUTF("[Model not loaded]");
+    if (!g_model) return env->NewStringUTF("[Model not loaded]");
+
+    // Reset context before each generation to prevent KV cache overflow
+    // across multiple conversation turns.
+    if (g_llama) {
+        llama_free(g_llama);
+        g_llama = nullptr;
+    }
+    llama_context_params cparams = llama_context_default_params();
+    cparams.n_ctx = 4096;
+    g_llama = llama_init_from_model(g_model, cparams);
+    if (!g_llama) {
+        LOGE("Failed to re-init llama context");
+        return env->NewStringUTF("[Context init failed]");
+    }
+    llama_set_n_threads(g_llama, 4, 4);
 
     const char* promptStr = env->GetStringUTFChars(prompt, nullptr);
     std::string output;
@@ -57,7 +72,10 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
     env->ReleaseStringUTFChars(prompt, promptStr);
 
     llama_batch batch = llama_batch_get_one(tokens.data(), (int32_t) tokens.size());
-    llama_decode(g_llama, batch);
+    if (llama_decode(g_llama, batch) != 0) {
+        LOGE("Prompt decode failed — prompt may be too long");
+        return env->NewStringUTF("[Prompt too long]");
+    }
 
     for (int i = 0; i < maxTokens; i++) {
         llama_token token = llama_sampler_sample(g_sampler, g_llama, -1);
@@ -83,7 +101,7 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFreeModel(JNIEnv*, jobject) {
 
 JNIEXPORT jboolean JNICALL
 Java_com_whisperlm_app_ml_llm_LlmEngine_nativeIsLoaded(JNIEnv*, jobject) {
-    return (g_llama != nullptr) ? JNI_TRUE : JNI_FALSE;
+    return (g_model != nullptr) ? JNI_TRUE : JNI_FALSE;
 }
 
 } // extern "C"

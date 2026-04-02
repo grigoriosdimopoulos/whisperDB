@@ -129,7 +129,7 @@ class LlmEngine @Inject constructor(
     }
 
     private fun generateLlama(prompt: String): Flow<String> = flow {
-        emit(nativeGenerate(prompt, 512))
+        emit(nativeGenerate(prompt, 200))
     }.flowOn(Dispatchers.Default)
 
     fun release() {
