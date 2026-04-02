@@ -107,8 +107,8 @@ class LlmEngine @Inject constructor(
     }
 
     private fun buildPrompt(systemContext: String, userQuery: String): String {
-        // Gemma / Llama instruction format
-        return "<start_of_turn>user\n$systemContext\n\nQuestion: $userQuery<end_of_turn>\n<start_of_turn>model\n"
+        // ChatML format — works with Qwen, Mistral, Phi, and most common GGUF models
+        return "<|im_start|>system\n$systemContext<|im_end|>\n<|im_start|>user\n$userQuery<|im_end|>\n<|im_start|>assistant\n"
     }
 
     private fun generateMediaPipe(prompt: String): Flow<String> = flow {

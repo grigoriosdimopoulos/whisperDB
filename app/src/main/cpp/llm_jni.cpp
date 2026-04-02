@@ -54,13 +54,13 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
         g_llama = nullptr;
     }
     llama_context_params cparams = llama_context_default_params();
-    cparams.n_ctx = 4096;
+    cparams.n_ctx = 2048;
     g_llama = llama_init_from_model(g_model, cparams);
     if (!g_llama) {
         LOGE("Failed to re-init llama context");
         return env->NewStringUTF("[Context init failed]");
     }
-    llama_set_n_threads(g_llama, 4, 4);
+    llama_set_n_threads(g_llama, 8, 8);
 
     const char* promptStr = env->GetStringUTFChars(prompt, nullptr);
     std::string output;
@@ -77,6 +77,12 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
         return env->NewStringUTF("[Prompt too long]");
     }
 
+    // Stop strings for common chat templates
+    static const char* STOP_STRINGS[] = {
+        "<|im_end|>", "</s>", "<|eot_id|>", "<|end|>",
+        "\nUser:", "\nuser:", nullptr
+    };
+
     for (int i = 0; i < maxTokens; i++) {
         llama_token token = llama_sampler_sample(g_sampler, g_llama, -1);
         if (llama_vocab_is_eog(vocab, token)) break;
@@ -84,6 +90,18 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
         char buf[256] = {};
         int n = llama_token_to_piece(vocab, token, buf, sizeof(buf), 0, true);
         if (n > 0) output.append(buf, n);
+
+        // Check stop strings — truncate output and stop
+        bool hit_stop = false;
+        for (int s = 0; STOP_STRINGS[s] != nullptr; s++) {
+            size_t pos = output.find(STOP_STRINGS[s]);
+            if (pos != std::string::npos) {
+                output.erase(pos);
+                hit_stop = true;
+                break;
+            }
+        }
+        if (hit_stop) break;
 
         llama_batch single = llama_batch_get_one(&token, 1);
         if (llama_decode(g_llama, single) != 0) break;
