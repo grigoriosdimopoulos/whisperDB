@@ -5,7 +5,9 @@ import android.util.Log
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import com.whisperlm.app.core.util.FileUtils
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
@@ -25,7 +27,12 @@ class LlmEngine @Inject constructor(
 ) {
     companion object {
         private const val TAG = "LlmEngine"
-        private const val LLAMA_CONTEXT_SIZE = 4096
+        private const val LLAMA_CONTEXT_SIZE = 2048
+
+        // Cap the system context fed into the prompt so it fits within the model's
+        // context window. TinyLlama / small models have 2048 tokens total;
+        // 3600 chars ≈ 900 tokens leaving ~900 tokens for the response.
+        private const val MAX_CONTEXT_CHARS = 3600
 
         init {
             try {
@@ -34,6 +41,11 @@ class LlmEngine @Inject constructor(
                 Log.w(TAG, "Native library not loaded: ${e.message}")
             }
         }
+    }
+
+    /** Callback interface invoked from C++ for each generated token piece. */
+    fun interface StreamCallback {
+        fun onToken(piece: String)
     }
 
     var activeBackend: LlmBackend = LlmBackend.NONE
@@ -93,8 +105,7 @@ class LlmEngine @Inject constructor(
     fun isReady(): Boolean = activeBackend != LlmBackend.NONE
 
     /**
-     * Generate a response to the given prompt + context.
-     * Returns a Flow of token strings for streaming display.
+     * Generate a response. Returns a Flow of token strings for streaming display.
      */
     fun generate(systemContext: String, userQuery: String): Flow<String> {
         val prompt = buildPrompt(systemContext, userQuery)
@@ -107,8 +118,17 @@ class LlmEngine @Inject constructor(
     }
 
     private fun buildPrompt(systemContext: String, userQuery: String): String {
-        // ChatML format — works with Qwen, Mistral, Phi, and most common GGUF models
-        return "<|im_start|>system\n$systemContext<|im_end|>\n<|im_start|>user\n$userQuery<|im_end|>\n<|im_start|>assistant\n"
+        // Truncate context to fit within the model's token window.
+        // Small models (TinyLlama, Qwen-1.5B) have 2048 token limits;
+        // we keep the most recent portion of the context (tail) as it
+        // is more relevant than older dialogues.
+        val ctx = if (systemContext.length > MAX_CONTEXT_CHARS) {
+            "...\n" + systemContext.takeLast(MAX_CONTEXT_CHARS)
+        } else {
+            systemContext
+        }
+        // ChatML format — compatible with Qwen, Mistral, Phi, TinyLlama, and most GGUF models
+        return "<|im_start|>system\n$ctx<|im_end|>\n<|im_start|>user\n$userQuery<|im_end|>\n<|im_start|>assistant\n"
     }
 
     private fun generateMediaPipe(prompt: String): Flow<String> = flow {
@@ -117,7 +137,6 @@ class LlmEngine @Inject constructor(
             return@flow
         }
         try {
-            // generateResponse is synchronous; wrap in IO dispatcher
             val response = withContext(Dispatchers.Default) {
                 inference.generateResponse(prompt)
             }
@@ -128,8 +147,14 @@ class LlmEngine @Inject constructor(
         }
     }
 
-    private fun generateLlama(prompt: String): Flow<String> = flow {
-        emit(nativeGenerate(prompt, 200))
+    // Streams tokens in real-time via JNI callback → callbackFlow.
+    // Each token piece is emitted as soon as llama.cpp produces it,
+    // so the user sees the response building word-by-word.
+    private fun generateLlama(prompt: String): Flow<String> = callbackFlow {
+        nativeGenerateStreaming(prompt, 200) { piece ->
+            trySend(piece)
+        }
+        close()
     }.flowOn(Dispatchers.Default)
 
     fun release() {
@@ -139,8 +164,9 @@ class LlmEngine @Inject constructor(
         activeBackend = LlmBackend.NONE
     }
 
-    // JNI methods for llama.cpp
+    // JNI methods
     private external fun nativeLoadModel(modelPath: String, nCtx: Int): Boolean
-    private external fun nativeGenerate(prompt: String, maxTokens: Int): String
+    private external fun nativeGenerateStreaming(prompt: String, maxTokens: Int, callback: StreamCallback)
+    private external fun nativeGenerate(prompt: String, maxTokens: Int): String  // fallback
     private external fun nativeFreeModel()
 }
