@@ -21,14 +21,13 @@ static const char* STOP_STRINGS[] = {
 };
 
 // Resets the llama context before each generation to prevent KV cache
-// overflow across turns, and enables flash attention for faster inference.
+// overflow across turns.
 static bool reset_context() {
     if (g_llama) { llama_free(g_llama); g_llama = nullptr; }
 
     llama_context_params cparams = llama_context_default_params();
-    cparams.n_ctx       = 2048;
-    cparams.n_batch     = 512;
-    cparams.flash_attn  = true;   // 20-30% faster on Adreno/Mali GPUs
+    cparams.n_ctx   = 2048;
+    cparams.n_batch = 512;
 
     g_llama = llama_init_from_model(g_model, cparams);
     if (!g_llama) { LOGE("Failed to re-init llama context"); return false; }

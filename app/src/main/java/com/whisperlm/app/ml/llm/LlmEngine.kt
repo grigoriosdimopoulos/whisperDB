@@ -155,6 +155,7 @@ class LlmEngine @Inject constructor(
             trySend(piece)
         }
         close()
+        awaitClose()
     }.flowOn(Dispatchers.Default)
 
     fun release() {
