@@ -31,8 +31,12 @@ class LlmEngine @Inject constructor(
 
         // Cap the system context fed into the prompt so it fits within the model's
         // context window. TinyLlama / small models have 2048 tokens total;
-        // 3600 chars ≈ 900 tokens leaving ~900 tokens for the response.
-        private const val MAX_CONTEXT_CHARS = 3600
+        // 2000 chars ≈ 500 tokens, leaving room for history + response.
+        private const val MAX_CONTEXT_CHARS = 2000
+
+        // Keep only the last N chat turns in the prompt to stay within context window.
+        // Each turn is ~80-160 tokens; 6 turns ≈ 500-900 tokens.
+        private const val MAX_HISTORY_TURNS = 6
 
         init {
             try {
@@ -106,9 +110,15 @@ class LlmEngine @Inject constructor(
 
     /**
      * Generate a response. Returns a Flow of token strings for streaming display.
+     * @param history Previous conversation turns as (role, content) pairs.
+     *                Role must be "user" or "assistant".
      */
-    fun generate(systemContext: String, userQuery: String): Flow<String> {
-        val prompt = buildPrompt(systemContext, userQuery)
+    fun generate(
+        systemContext: String,
+        history: List<Pair<String, String>> = emptyList(),
+        userQuery: String
+    ): Flow<String> {
+        val prompt = buildPrompt(systemContext, history, userQuery)
 
         return when (activeBackend) {
             LlmBackend.MEDIAPIPE -> generateMediaPipe(prompt)
@@ -117,22 +127,44 @@ class LlmEngine @Inject constructor(
         }
     }
 
-    private fun buildPrompt(systemContext: String, userQuery: String): String {
-        // Truncate context to fit within the model's token window.
-        val ctx = if (systemContext.length > MAX_CONTEXT_CHARS) {
-            "...\n" + systemContext.takeLast(MAX_CONTEXT_CHARS)
+    private fun buildPrompt(
+        systemContext: String,
+        history: List<Pair<String, String>>,
+        userQuery: String
+    ): String {
+        // Instruction prefix that reduces hallucination and verbosity.
+        val instruction = "You are a helpful AI assistant. " +
+            "Answer concisely and directly. " +
+            "Only use facts from the provided context or conversation. " +
+            "If something is not mentioned, say you don't know.\n\n"
+
+        // Truncate dialogue context to leave room for history + response.
+        val ctx = instruction + if (systemContext.length > MAX_CONTEXT_CHARS) {
+            systemContext.takeLast(MAX_CONTEXT_CHARS)
         } else {
             systemContext
         }
 
+        // Limit history turns to keep within context window
+        val trimmedHistory = history.takeLast(MAX_HISTORY_TURNS)
+
+        // Combine history + current user message into role/content arrays
+        val allRoles    = (trimmedHistory.map { it.first }  + "user").toTypedArray()
+        val allContents = (trimmedHistory.map { it.second } + userQuery).toTypedArray()
+
         return if (activeBackend == LlmBackend.LLAMA_CPP) {
-            // Use the model's own embedded chat template via llama.cpp.
-            // This automatically handles TinyLlama (Zephyr format), Qwen (ChatML),
-            // Llama-3, Mistral, Phi-3, etc. without any manual format detection.
-            nativeFormatPrompt(ctx, userQuery)
+            // Use the model's own embedded chat template — works for TinyLlama,
+            // Qwen, Llama-3, Mistral, Phi-3, etc. without manual format detection.
+            nativeFormatPromptMultiTurn(ctx, allRoles, allContents)
         } else {
             // ChatML fallback for MediaPipe backend
-            "<|im_start|>system\n$ctx<|im_end|>\n<|im_start|>user\n$userQuery<|im_end|>\n<|im_start|>assistant\n"
+            buildString {
+                append("<|im_start|>system\n$ctx<|im_end|>\n")
+                trimmedHistory.forEach { (role, content) ->
+                    append("<|im_start|>$role\n$content<|im_end|>\n")
+                }
+                append("<|im_start|>user\n$userQuery<|im_end|>\n<|im_start|>assistant\n")
+            }
         }
     }
 
@@ -172,7 +204,7 @@ class LlmEngine @Inject constructor(
 
     // JNI methods
     private external fun nativeLoadModel(modelPath: String, nCtx: Int): Boolean
-    private external fun nativeFormatPrompt(system: String, user: String): String
+    private external fun nativeFormatPromptMultiTurn(system: String, roles: Array<String>, contents: Array<String>): String
     private external fun nativeGenerateStreaming(prompt: String, maxTokens: Int, callback: StreamCallback)
     private external fun nativeGenerate(prompt: String, maxTokens: Int): String  // fallback
     private external fun nativeFreeModel()

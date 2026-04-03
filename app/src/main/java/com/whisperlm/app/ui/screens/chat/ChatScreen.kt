@@ -135,6 +135,15 @@ class ChatViewModel @Inject constructor(
         val trimmed = text.trim()
         if (trimmed.isBlank() || _isLoading.value) return
 
+        // Capture completed conversation history BEFORE adding the new user message.
+        // This becomes the multi-turn context passed to the model.
+        val historySnapshot = _messages.value
+            .filter { !it.isStreaming && it.content.isNotBlank() }
+            .map { msg ->
+                val role = if (msg.role == MessageRole.USER) "user" else "assistant"
+                Pair(role, msg.content)
+            }
+
         // Append the user message immediately
         val userMsg = ChatMessage(role = MessageRole.USER, content = trimmed)
         _messages.update { it + userMsg }
@@ -154,8 +163,11 @@ class ChatViewModel @Inject constructor(
 
             try {
                 val accumulated = StringBuilder()
-                llmEngine.generate(systemContext = builtContext, userQuery = trimmed)
-                    .collect { token ->
+                llmEngine.generate(
+                    systemContext = builtContext,
+                    history = historySnapshot,
+                    userQuery = trimmed
+                ).collect { token ->
                         accumulated.append(token)
                         // Replace the streaming placeholder with the current accumulated text
                         _messages.update { list ->

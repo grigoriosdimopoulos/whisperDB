@@ -146,44 +146,58 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerateStreaming(
     }
 }
 
-// Formats a system+user message pair using the model's embedded Jinja chat
-// template (read from model metadata). Falls back to ChatML if not present.
-// This ensures correct prompting for TinyLlama, Qwen, Llama-3, Mistral, etc.
+// Formats a full multi-turn conversation using the model's embedded Jinja
+// chat template. Accepts system context + parallel role/content arrays so
+// the full chat history is included in the prompt (not just the last message).
+// Falls back to ChatML if the model has no embedded template.
 JNIEXPORT jstring JNICALL
-Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFormatPrompt(
-        JNIEnv* env, jobject, jstring system, jstring user) {
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFormatPromptMultiTurn(
+        JNIEnv* env, jobject, jstring system, jobjectArray roles, jobjectArray contents) {
     if (!g_model) return env->NewStringUTF("");
 
-    const char* sysStr  = env->GetStringUTFChars(system, nullptr);
-    const char* userStr = env->GetStringUTFChars(user,   nullptr);
+    const char* sysStr = env->GetStringUTFChars(system, nullptr);
+    int n = (int)env->GetArrayLength(roles);  // number of user/assistant turns
 
-    llama_chat_message messages[2] = {
-        {"system", sysStr},
-        {"user",   userStr}
-    };
+    // Build message vector: 1 system message + n user/assistant turns
+    std::vector<std::string> roleStrs(n), contentStrs(n);
+    std::vector<llama_chat_message> messages(n + 1);
+    messages[0] = {"system", sysStr};
 
-    // Get the chat template embedded in the model metadata (e.g. TinyLlama → Zephyr,
-    // Qwen → ChatML, Llama-3 → its own format). Returns nullptr if not present.
+    for (int i = 0; i < n; i++) {
+        auto jrole    = (jstring)env->GetObjectArrayElement(roles,    i);
+        auto jcontent = (jstring)env->GetObjectArrayElement(contents, i);
+        const char* r = env->GetStringUTFChars(jrole,    nullptr);
+        const char* c = env->GetStringUTFChars(jcontent, nullptr);
+        roleStrs[i]    = r;
+        contentStrs[i] = c;
+        env->ReleaseStringUTFChars(jrole,    r);
+        env->ReleaseStringUTFChars(jcontent, c);
+        env->DeleteLocalRef(jrole);
+        env->DeleteLocalRef(jcontent);
+        messages[i + 1] = {roleStrs[i].c_str(), contentStrs[i].c_str()};
+    }
+
     const char* tmpl = llama_model_chat_template(g_model, nullptr);
+    int size = llama_chat_apply_template(tmpl, messages.data(), messages.size(), true, nullptr, 0);
 
-    // First call: measure required buffer size
-    int size = llama_chat_apply_template(tmpl, messages, 2, true, nullptr, 0);
     std::string result;
     if (size > 0) {
         std::vector<char> buf(size + 1, '\0');
-        llama_chat_apply_template(tmpl, messages, 2, true, buf.data(), (int32_t)buf.size());
+        llama_chat_apply_template(tmpl, messages.data(), messages.size(), true, buf.data(), (int32_t)buf.size());
         result = std::string(buf.data(), size);
-        LOGI("Applied embedded chat template (%d chars)", size);
+        LOGI("Chat template applied: %d turns, %d chars", n + 1, size);
     } else {
-        // Fallback to ChatML if template not found in model metadata
         LOGI("No embedded chat template — falling back to ChatML");
-        result = std::string("<|im_start|>system\n") + sysStr
-               + "<|im_end|>\n<|im_start|>user\n" + userStr
-               + "<|im_end|>\n<|im_start|>assistant\n";
+        result = "<|im_start|>system\n";
+        result += sysStr;
+        result += "<|im_end|>\n";
+        for (int i = 0; i < n; i++) {
+            result += "<|im_start|>" + roleStrs[i] + "\n" + contentStrs[i] + "<|im_end|>\n";
+        }
+        result += "<|im_start|>assistant\n";
     }
 
     env->ReleaseStringUTFChars(system, sysStr);
-    env->ReleaseStringUTFChars(user,   userStr);
     return env->NewStringUTF(result.c_str());
 }
 
@@ -249,8 +263,8 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeLoadModel(
 }
 
 JNIEXPORT jstring JNICALL
-Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFormatPrompt(
-        JNIEnv* env, jobject, jstring, jstring) {
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFormatPromptMultiTurn(
+        JNIEnv* env, jobject, jstring, jobjectArray, jobjectArray) {
     return env->NewStringUTF("");
 }
 
