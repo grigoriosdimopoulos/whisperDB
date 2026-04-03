@@ -52,7 +52,7 @@ if(EXISTS ${LLAMA_CPP_DIR}/CMakeLists.txt)
     set(GGML_OPENMP          OFF CACHE BOOL "" FORCE)
     set(GGML_METAL           OFF CACHE BOOL "" FORCE)
     set(GGML_CUDA            OFF CACHE BOOL "" FORCE)
-    set(GGML_VULKAN          OFF CACHE BOOL "" FORCE)
+    set(GGML_VULKAN          ON  CACHE BOOL "" FORCE)  # GPU acceleration via Vulkan
     set(BUILD_SHARED_LIBS    OFF CACHE BOOL "" FORCE)
 
     add_subdirectory(${LLAMA_CPP_DIR} llama_build)

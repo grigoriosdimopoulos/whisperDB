@@ -43,6 +43,14 @@ jobs:
       - name: Install CMake 3.22.1
         run: echo "y" | sdkmanager "cmake;3.22.1" --sdk_root=$ANDROID_SDK_ROOT
 
+      # ── 4a. Vulkan shader compiler (required for llama.cpp Vulkan backend) ───
+      - name: Install Vulkan shader compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y glslc glslang-tools
+          glslc --version || true
+          glslangValidator --version || true
+
       # ── 4. Download native inference libraries ─────────────────────────────
       - name: Download whisper.cpp
         run: |

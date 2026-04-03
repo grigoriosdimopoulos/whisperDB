@@ -23,6 +23,7 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeLoadModel(
     LOGI("Loading llama model: %s", path);
 
     llama_model_params mparams = llama_model_default_params();
+    mparams.n_gpu_layers = 99; // offload all layers to Vulkan GPU; falls back to CPU if unavailable
     g_model = llama_model_load_from_file(path, mparams);
     env->ReleaseStringUTFChars(modelPath, path);
 
