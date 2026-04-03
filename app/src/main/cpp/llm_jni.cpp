@@ -162,12 +162,16 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFormatPrompt(
         {"user",   userStr}
     };
 
+    // Get the chat template embedded in the model metadata (e.g. TinyLlama → Zephyr,
+    // Qwen → ChatML, Llama-3 → its own format). Returns nullptr if not present.
+    const char* tmpl = llama_model_chat_template(g_model, nullptr);
+
     // First call: measure required buffer size
-    int size = llama_chat_apply_template(g_model, nullptr, messages, 2, true, nullptr, 0);
+    int size = llama_chat_apply_template(tmpl, messages, 2, true, nullptr, 0);
     std::string result;
     if (size > 0) {
         std::vector<char> buf(size + 1, '\0');
-        llama_chat_apply_template(g_model, nullptr, messages, 2, true, buf.data(), (int32_t)buf.size());
+        llama_chat_apply_template(tmpl, messages, 2, true, buf.data(), (int32_t)buf.size());
         result = std::string(buf.data(), size);
         LOGI("Applied embedded chat template (%d chars)", size);
     } else {
