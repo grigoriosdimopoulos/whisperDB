@@ -119,16 +119,21 @@ class LlmEngine @Inject constructor(
 
     private fun buildPrompt(systemContext: String, userQuery: String): String {
         // Truncate context to fit within the model's token window.
-        // Small models (TinyLlama, Qwen-1.5B) have 2048 token limits;
-        // we keep the most recent portion of the context (tail) as it
-        // is more relevant than older dialogues.
         val ctx = if (systemContext.length > MAX_CONTEXT_CHARS) {
             "...\n" + systemContext.takeLast(MAX_CONTEXT_CHARS)
         } else {
             systemContext
         }
-        // ChatML format — compatible with Qwen, Mistral, Phi, TinyLlama, and most GGUF models
-        return "<|im_start|>system\n$ctx<|im_end|>\n<|im_start|>user\n$userQuery<|im_end|>\n<|im_start|>assistant\n"
+
+        return if (activeBackend == LlmBackend.LLAMA_CPP) {
+            // Use the model's own embedded chat template via llama.cpp.
+            // This automatically handles TinyLlama (Zephyr format), Qwen (ChatML),
+            // Llama-3, Mistral, Phi-3, etc. without any manual format detection.
+            nativeFormatPrompt(ctx, userQuery)
+        } else {
+            // ChatML fallback for MediaPipe backend
+            "<|im_start|>system\n$ctx<|im_end|>\n<|im_start|>user\n$userQuery<|im_end|>\n<|im_start|>assistant\n"
+        }
     }
 
     private fun generateMediaPipe(prompt: String): Flow<String> = flow {
@@ -167,6 +172,7 @@ class LlmEngine @Inject constructor(
 
     // JNI methods
     private external fun nativeLoadModel(modelPath: String, nCtx: Int): Boolean
+    private external fun nativeFormatPrompt(system: String, user: String): String
     private external fun nativeGenerateStreaming(prompt: String, maxTokens: Int, callback: StreamCallback)
     private external fun nativeGenerate(prompt: String, maxTokens: Int): String  // fallback
     private external fun nativeFreeModel()

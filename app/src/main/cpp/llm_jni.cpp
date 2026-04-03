@@ -146,6 +146,43 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerateStreaming(
     }
 }
 
+// Formats a system+user message pair using the model's embedded Jinja chat
+// template (read from model metadata). Falls back to ChatML if not present.
+// This ensures correct prompting for TinyLlama, Qwen, Llama-3, Mistral, etc.
+JNIEXPORT jstring JNICALL
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFormatPrompt(
+        JNIEnv* env, jobject, jstring system, jstring user) {
+    if (!g_model) return env->NewStringUTF("");
+
+    const char* sysStr  = env->GetStringUTFChars(system, nullptr);
+    const char* userStr = env->GetStringUTFChars(user,   nullptr);
+
+    llama_chat_message messages[2] = {
+        {"system", sysStr},
+        {"user",   userStr}
+    };
+
+    // First call: measure required buffer size
+    int size = llama_chat_apply_template(g_model, nullptr, messages, 2, true, nullptr, 0);
+    std::string result;
+    if (size > 0) {
+        std::vector<char> buf(size + 1, '\0');
+        llama_chat_apply_template(g_model, nullptr, messages, 2, true, buf.data(), (int32_t)buf.size());
+        result = std::string(buf.data(), size);
+        LOGI("Applied embedded chat template (%d chars)", size);
+    } else {
+        // Fallback to ChatML if template not found in model metadata
+        LOGI("No embedded chat template — falling back to ChatML");
+        result = std::string("<|im_start|>system\n") + sysStr
+               + "<|im_end|>\n<|im_start|>user\n" + userStr
+               + "<|im_end|>\n<|im_start|>assistant\n";
+    }
+
+    env->ReleaseStringUTFChars(system, sysStr);
+    env->ReleaseStringUTFChars(user,   userStr);
+    return env->NewStringUTF(result.c_str());
+}
+
 // Non-streaming fallback (kept for compatibility; not used by default)
 JNIEXPORT jstring JNICALL
 Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
@@ -205,6 +242,12 @@ JNIEXPORT jboolean JNICALL
 Java_com_whisperlm_app_ml_llm_LlmEngine_nativeLoadModel(
         JNIEnv*, jobject, jstring, jint) {
     return JNI_FALSE;
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFormatPrompt(
+        JNIEnv* env, jobject, jstring, jstring) {
+    return env->NewStringUTF("");
 }
 
 JNIEXPORT void JNICALL
