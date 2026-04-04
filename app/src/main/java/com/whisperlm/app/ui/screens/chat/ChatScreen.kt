@@ -64,6 +64,7 @@ import com.whisperlm.app.ui.theme.BubbleAssistant
 import com.whisperlm.app.ui.theme.BubbleUser
 import com.whisperlm.app.ui.theme.PurplePrimary
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
