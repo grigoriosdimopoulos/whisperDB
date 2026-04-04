@@ -20,18 +20,24 @@ static const char* STOP_STRINGS[] = {
     "\nUser:", "\nuser:", nullptr
 };
 
-// Resets the llama context before each generation to prevent KV cache
-// overflow across turns.
+// Resets the KV cache between generations without destroying the context.
+// On first call, creates the context and allocates GPU memory (slow, ~1-2s).
+// On subsequent calls, just clears the KV cache (fast, ~50ms) — no GPU
+// memory reallocation, no re-init of threads or batch size.
 static bool reset_context() {
-    if (g_llama) { llama_free(g_llama); g_llama = nullptr; }
-
+    if (g_llama) {
+        // Fast path: reuse existing context, clear KV cache only
+        llama_kv_self_seq_rm(g_llama, -1, -1, -1);
+        return true;
+    }
+    // Slow path (first call only): allocate context + GPU KV cache
     llama_context_params cparams = llama_context_default_params();
     cparams.n_ctx   = 2048;
     cparams.n_batch = 512;
-
     g_llama = llama_init_from_model(g_model, cparams);
-    if (!g_llama) { LOGE("Failed to re-init llama context"); return false; }
+    if (!g_llama) { LOGE("Failed to create llama context"); return false; }
     llama_set_n_threads(g_llama, 8, 8);
+    LOGI("Llama context created — GPU KV cache allocated once");
     return true;
 }
 
