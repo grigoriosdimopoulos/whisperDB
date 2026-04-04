@@ -55,6 +55,10 @@ class LlmEngine @Inject constructor(
     var activeBackend: LlmBackend = LlmBackend.NONE
         private set
 
+    /** Human-readable inference backend, e.g. "GPU · Vulkan" or "CPU only". */
+    var inferenceBackend: String = "CPU only"
+        private set
+
     private var mediaPipeInference: LlmInference? = null
 
     /** Detect and load whichever LLM model is present. Returns the backend chosen. */
@@ -89,7 +93,8 @@ class LlmEngine @Inject constructor(
             FileUtils.isLlamaModel(modelFile) -> {
                 val loaded = nativeLoadModel(modelFile.absolutePath, LLAMA_CONTEXT_SIZE)
                 activeBackend = if (loaded) {
-                    Log.i(TAG, "llama.cpp model loaded: ${modelFile.name}")
+                    inferenceBackend = nativeGetInferenceBackend()
+                    Log.i(TAG, "llama.cpp model loaded: ${modelFile.name} — $inferenceBackend")
                     LlmBackend.LLAMA_CPP
                 } else {
                     Log.e(TAG, "llama.cpp load failed")
@@ -204,6 +209,7 @@ class LlmEngine @Inject constructor(
 
     // JNI methods
     private external fun nativeLoadModel(modelPath: String, nCtx: Int): Boolean
+    private external fun nativeGetInferenceBackend(): String
     private external fun nativeFormatPromptMultiTurn(system: String, roles: Array<String>, contents: Array<String>): String
     private external fun nativeGenerateStreaming(prompt: String, maxTokens: Int, callback: StreamCallback)
     private external fun nativeGenerate(prompt: String, maxTokens: Int): String  // fallback

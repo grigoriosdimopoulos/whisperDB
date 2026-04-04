@@ -238,6 +238,16 @@ Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGenerate(
     return env->NewStringUTF(output.c_str());
 }
 
+JNIEXPORT jstring JNICALL
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGetInferenceBackend(JNIEnv* env, jobject) {
+    if (!g_model) return env->NewStringUTF("Not loaded");
+#ifdef WHISPERLM_GPU_VULKAN
+    return env->NewStringUTF("GPU · Vulkan");
+#else
+    return env->NewStringUTF("CPU only");
+#endif
+}
+
 JNIEXPORT void JNICALL
 Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFreeModel(JNIEnv*, jobject) {
     if (g_sampler) { llama_sampler_free(g_sampler); g_sampler = nullptr; }
@@ -266,6 +276,11 @@ JNIEXPORT jstring JNICALL
 Java_com_whisperlm_app_ml_llm_LlmEngine_nativeFormatPromptMultiTurn(
         JNIEnv* env, jobject, jstring, jobjectArray, jobjectArray) {
     return env->NewStringUTF("");
+}
+
+JNIEXPORT jstring JNICALL
+Java_com_whisperlm_app_ml_llm_LlmEngine_nativeGetInferenceBackend(JNIEnv* env, jobject) {
+    return env->NewStringUTF("CPU only");
 }
 
 JNIEXPORT void JNICALL

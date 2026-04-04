@@ -98,6 +98,9 @@ class ChatViewModel @Inject constructor(
     private val _llmStatus = MutableStateFlow(STATUS_LOADING)
     val llmStatus: StateFlow<String> = _llmStatus.asStateFlow()
 
+    private val _inferenceBackend = MutableStateFlow("")
+    val inferenceBackend: StateFlow<String> = _inferenceBackend.asStateFlow()
+
     // Pre-built conversation context injected at inference time
     private var builtContext: String = ""
 
@@ -110,6 +113,9 @@ class ChatViewModel @Inject constructor(
                     _llmStatus.value = when (backend) {
                         LlmBackend.NONE -> STATUS_NO_MODEL
                         else -> STATUS_READY
+                    }
+                    if (backend != LlmBackend.NONE) {
+                        _inferenceBackend.value = llmEngine.inferenceBackend
                     }
                 } catch (e: Throwable) {
                     Log.e(TAG, "Model load error: ${e.message}")
@@ -161,15 +167,36 @@ class ChatViewModel @Inject constructor(
             )
             _messages.update { it + placeholder }
 
+            // Helper: update the streaming bubble content
+            fun setPlaceholder(text: String) {
+                _messages.update { list ->
+                    list.map { if (it.id == streamingId) it.copy(content = text) else it }
+                }
+            }
+
+            // Progressive status messages while waiting for the first token.
+            // Cancelled automatically when the first real token arrives.
+            val statusJob = launch {
+                delay(400L);  setPlaceholder("Thinking…")
+                delay(3000L); setPlaceholder("Processing prompt…")
+                delay(6000L); setPlaceholder("Almost there…")
+            }
+
             try {
                 val accumulated = StringBuilder()
+                var firstToken = true
+
                 llmEngine.generate(
                     systemContext = builtContext,
                     history = historySnapshot,
                     userQuery = trimmed
                 ).collect { token ->
+                        if (firstToken) {
+                            firstToken = false
+                            statusJob.cancel()   // stop status messages
+                            accumulated.setLength(0)  // clear any status text
+                        }
                         accumulated.append(token)
-                        // Replace the streaming placeholder with the current accumulated text
                         _messages.update { list ->
                             list.map { msg ->
                                 if (msg.id == streamingId) {
@@ -181,6 +208,7 @@ class ChatViewModel @Inject constructor(
                         }
                     }
 
+                statusJob.cancel() // ensure cancelled even if no tokens arrived
                 // Finalize: mark streaming as done
                 _messages.update { list ->
                     list.map { msg ->
@@ -195,6 +223,7 @@ class ChatViewModel @Inject constructor(
                     }
                 }
             } catch (e: Exception) {
+                statusJob.cancel()
                 Log.e(TAG, "Generation error: ${e.message}")
                 _messages.update { list ->
                     list.map { msg ->
@@ -232,6 +261,7 @@ fun ChatScreen(
     val messages by viewModel.messages.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val llmStatus by viewModel.llmStatus.collectAsState()
+    val inferenceBackend by viewModel.inferenceBackend.collectAsState()
 
     val hasModel = llmStatus == "Ready" || isLoading
     val listState = rememberLazyListState()
@@ -279,16 +309,43 @@ fun ChatScreen(
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.SemiBold
                             )
-                            Text(
-                                text = llmStatus,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = when {
-                                    llmStatus == "Ready" -> MaterialTheme.colorScheme.primary
-                                    llmStatus.startsWith("No model") ->
-                                        MaterialTheme.colorScheme.error
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                Text(
+                                    text = llmStatus,
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = when {
+                                        llmStatus == "Ready" -> MaterialTheme.colorScheme.primary
+                                        llmStatus.startsWith("No model") ->
+                                            MaterialTheme.colorScheme.error
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    }
+                                )
+                                // GPU/CPU badge — shown once model is ready
+                                if (llmStatus == "Ready" && inferenceBackend.isNotEmpty()) {
+                                    val isGpu = inferenceBackend.startsWith("GPU")
+                                    Surface(
+                                        shape = RoundedCornerShape(4.dp),
+                                        color = if (isGpu)
+                                            MaterialTheme.colorScheme.primaryContainer
+                                        else
+                                            MaterialTheme.colorScheme.surfaceVariant,
+                                        tonalElevation = 0.dp
+                                    ) {
+                                        Text(
+                                            text = inferenceBackend,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = if (isGpu)
+                                                MaterialTheme.colorScheme.onPrimaryContainer
+                                            else
+                                                MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
+                                        )
+                                    }
                                 }
-                            )
+                            }
                         }
                     }
                 },

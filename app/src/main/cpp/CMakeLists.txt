@@ -93,6 +93,11 @@ if(LLAMA_AVAILABLE)
     target_include_directories(whisperlm_jni PRIVATE ${LLAMA_INCLUDE_DIR})
     target_link_libraries(whisperlm_jni llama)
     target_compile_definitions(whisperlm_jni PRIVATE LLAMA_AVAILABLE=1)
+    if(GGML_VULKAN)
+        # Expose to JNI so we can show the user which backend is active
+        target_compile_definitions(whisperlm_jni PRIVATE WHISPERLM_GPU_VULKAN=1)
+        message(STATUS "whisperlm_jni: Vulkan GPU backend enabled")
+    endif()
 endif()
 
 # Android system libraries
